@@ -9,6 +9,7 @@ import { getHelmetConfig } from "./config/helmetConfig";
 import { getCorsOptions } from "./config/corsConfig";
 import setupSwagger from "./config/swagger";
 import errorHandler from "./api/v1/middleware/errorHandler";
+import workoutRoutes from "./api/v1/routes/workoutRoutes";
 
 const app: Express = express();
 
@@ -32,11 +33,8 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// API Routes will be added here
-// app.use("/api/v1/workouts", workoutRoutes);
-// app.use("/api/v1/exercises", exerciseRoutes);
-// app.use("/api/v1/workout-plans", workoutPlanRoutes);
-// app.use("/api/v1/progress", progressRoutes);
+// API Routes
+app.use("/api/v1/workouts", workoutRoutes);
 
 // 404 handler
 app.use((_req, res) => {
