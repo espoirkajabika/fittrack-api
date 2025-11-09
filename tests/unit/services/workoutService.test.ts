@@ -3,6 +3,14 @@ import { WorkoutRepository } from "../../../src/api/v1/repositories/workoutRepos
 import { mockWorkoutData, mockWorkout, mockUpdateData } from "../../helpers/mockData";
 import { AuthorizationError } from "../../../src/api/v1/models/errors";
 
+// Mock Firebase config BEFORE importing anything that uses it
+jest.mock("../../../src/config/firebaseConfig", () => ({
+  db: {
+    collection: jest.fn(),
+  },
+  auth: {},
+}));
+
 // Mock the repository
 jest.mock("../../../src/api/v1/repositories/workoutRepository");
 
