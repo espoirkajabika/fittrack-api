@@ -4,6 +4,15 @@ import { WorkoutService } from "../services/workoutService";
 const workoutService = new WorkoutService();
 
 /**
+ * Filter options for workout queries
+ */
+interface WorkoutQueryFilters {
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+/**
  * Workout Controller
  * Handles HTTP requests and responses for workout endpoints
  */
@@ -55,7 +64,7 @@ export class WorkoutController {
       const userId = res.locals.uid;
       
       // Extract query parameters for filtering
-      const filters: any = {};
+      const filters: WorkoutQueryFilters = {};
       
       if (req.query.status) {
         filters.status = req.query.status as string;

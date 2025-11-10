@@ -2,6 +2,17 @@ import { ExerciseRepository } from "../repositories/exerciseRepository";
 import { Exercise, CreateExerciseDto, UpdateExerciseDto } from "../models/exercise";
 
 /**
+ * Filter options for exercises
+ */
+interface ExerciseFilters {
+  category?: string;
+  muscleGroup?: string;
+  equipment?: string;
+  difficulty?: string;
+  search?: string;
+}
+
+/**
  * Exercise Service
  * Contains business logic for exercise operations
  */
@@ -35,13 +46,7 @@ export class ExerciseService {
    * Get all exercises with optional filters
    * All authenticated users can browse exercises
    */
-  async getAllExercises(filters?: {
-    category?: string;
-    muscleGroup?: string;
-    equipment?: string;
-    difficulty?: string;
-    search?: string;
-  }): Promise<Exercise[]> {
+  async getAllExercises(filters?: ExerciseFilters): Promise<Exercise[]> {
     return await this.exerciseRepository.findAll(filters);
   }
 

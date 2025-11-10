@@ -4,6 +4,17 @@ import { ExerciseService } from "../services/exerciseService";
 const exerciseService = new ExerciseService();
 
 /**
+ * Filter options for exercises
+ */
+interface ExerciseQueryFilters {
+  category?: string;
+  muscleGroup?: string;
+  equipment?: string;
+  difficulty?: string;
+  search?: string;
+}
+
+/**
  * Exercise Controller
  * Handles HTTP requests and responses for exercise endpoints
  */
@@ -50,7 +61,7 @@ export class ExerciseController {
    */
   async getAllExercises(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const filters: any = {};
+      const filters: ExerciseQueryFilters = {};
 
       if (req.query.category) {
         filters.category = req.query.category as string;

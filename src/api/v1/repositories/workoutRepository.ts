@@ -1,8 +1,18 @@
 import { db } from "../../../config/firebaseConfig";
 import { Workout, CreateWorkoutDto, UpdateWorkoutDto } from "../models/workout";
 import { NotFoundError } from "../models/errors";
+import { Query, DocumentData } from "firebase-admin/firestore";
 
 const COLLECTION_NAME = "workouts";
+
+/**
+ * Filter options for workouts
+ */
+interface WorkoutFilters {
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
 
 /**
  * Workout Repository
@@ -66,15 +76,8 @@ export class WorkoutRepository {
   /**
    * Find all workouts for a user
    */
-  async findByUserId(
-    userId: string,
-    filters?: {
-      status?: string;
-      startDate?: Date;
-      endDate?: Date;
-    }
-  ): Promise<Workout[]> {
-    let query = db.collection(COLLECTION_NAME).where("userId", "==", userId);
+  async findByUserId(userId: string, filters?: WorkoutFilters): Promise<Workout[]> {
+    let query: Query<DocumentData> = db.collection(COLLECTION_NAME).where("userId", "==", userId);
 
     // Apply filters
     if (filters?.status) {
@@ -119,7 +122,7 @@ export class WorkoutRepository {
       throw new NotFoundError(`Workout with ID ${workoutId} not found`);
     }
 
-    const updates: any = {
+    const updates: Partial<DocumentData> = {
       ...updateData,
       updatedAt: new Date().toISOString(),
     };

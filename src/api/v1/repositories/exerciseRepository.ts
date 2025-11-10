@@ -1,8 +1,20 @@
 import { db } from "../../../config/firebaseConfig";
 import { Exercise, CreateExerciseDto, UpdateExerciseDto } from "../models/exercise";
 import { NotFoundError } from "../models/errors";
+import { Query, DocumentData } from "firebase-admin/firestore";
 
 const COLLECTION_NAME = "exercises";
+
+/**
+ * Filter options for exercises
+ */
+interface ExerciseFilters {
+  category?: string;
+  muscleGroup?: string;
+  equipment?: string;
+  difficulty?: string;
+  search?: string;
+}
 
 /**
  * Exercise Repository
@@ -63,14 +75,8 @@ export class ExerciseRepository {
   /**
    * Find all exercises with optional filters
    */
-  async findAll(filters?: {
-    category?: string;
-    muscleGroup?: string;
-    equipment?: string;
-    difficulty?: string;
-    search?: string;
-  }): Promise<Exercise[]> {
-    let query: any = db.collection(COLLECTION_NAME);
+  async findAll(filters?: ExerciseFilters): Promise<Exercise[]> {
+    let query: Query<DocumentData> = db.collection(COLLECTION_NAME);
 
     // Apply filters
     if (filters?.category) {
@@ -91,7 +97,7 @@ export class ExerciseRepository {
 
     const snapshot = await query.orderBy("name", "asc").get();
 
-    let exercises = snapshot.docs.map((doc: any) => {
+    let exercises = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -131,7 +137,7 @@ export class ExerciseRepository {
       throw new NotFoundError(`Exercise with ID ${exerciseId} not found`);
     }
 
-    const updates: any = {
+    const updates: Partial<DocumentData> = {
       ...updateData,
       updatedAt: new Date().toISOString(),
     };
