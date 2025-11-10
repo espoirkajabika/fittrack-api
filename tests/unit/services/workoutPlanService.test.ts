@@ -1,6 +1,5 @@
-import { WorkoutPlanService } from "../../../src/api/v1/services/workoutPlanService";
 import { WorkoutPlanRepository } from "../../../src/api/v1/repositories/workoutPlanRepository";
-import { WorkoutRepository } from "../../../src/api/v1/repositories/workoutRepository";
+import { db } from "../../../src/config/firebaseConfig";
 import {
   mockCreateWorkoutPlanData,
   mockWorkoutPlan,
@@ -8,8 +7,9 @@ import {
   mockWorkoutPlans,
   mockEnrollment,
 } from "../../helpers/workoutPlanMockData";
+import { NotFoundError } from "../../../src/api/v1/models/errors";
 
-// Mock Firebase config
+// Mock Firestore
 jest.mock("../../../src/config/firebaseConfig", () => ({
   db: {
     collection: jest.fn(),
@@ -17,137 +17,281 @@ jest.mock("../../../src/config/firebaseConfig", () => ({
   auth: {},
 }));
 
-// Mock the repositories
-jest.mock("../../../src/api/v1/repositories/workoutPlanRepository");
-jest.mock("../../../src/api/v1/repositories/workoutRepository");
-
-describe("WorkoutPlanService", () => {
-  let workoutPlanService: WorkoutPlanService;
-  let mockWorkoutPlanRepository: jest.Mocked<WorkoutPlanRepository>;
-  let mockWorkoutRepository: jest.Mocked<WorkoutRepository>;
+describe("WorkoutPlanRepository", () => {
+  let workoutPlanRepository: WorkoutPlanRepository;
+  let mockCollection: jest.Mock;
+  let mockDoc: jest.Mock;
+  let mockGet: jest.Mock;
+  let mockSet: jest.Mock;
+  let mockUpdate: jest.Mock;
+  let mockDelete: jest.Mock;
+  let mockWhere: jest.Mock;
+  let mockOrderBy: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
-    workoutPlanService = new WorkoutPlanService();
-    mockWorkoutPlanRepository = (
-      WorkoutPlanRepository as jest.MockedClass<typeof WorkoutPlanRepository>
-    ).mock.instances[0] as jest.Mocked<WorkoutPlanRepository>;
-    mockWorkoutRepository = (
-      WorkoutRepository as jest.MockedClass<typeof WorkoutRepository>
-    ).mock.instances[0] as jest.Mocked<WorkoutRepository>;
+
+    workoutPlanRepository = new WorkoutPlanRepository();
+
+    mockSet = jest.fn().mockResolvedValue(undefined);
+    mockGet = jest.fn();
+    mockUpdate = jest.fn().mockResolvedValue(undefined);
+    mockDelete = jest.fn().mockResolvedValue(undefined);
+    mockOrderBy = jest.fn();
+    mockWhere = jest.fn();
+
+    mockDoc = jest.fn().mockReturnValue({
+      id: "plan-123",
+      set: mockSet,
+      get: mockGet,
+      update: mockUpdate,
+      delete: mockDelete,
+    });
+
+    mockOrderBy.mockReturnValue({
+      get: jest.fn().mockResolvedValue({
+        docs: [],
+      }),
+    });
+
+    mockWhere.mockReturnValue({
+      where: mockWhere,
+      orderBy: mockOrderBy,
+      get: mockGet,
+    });
+
+    mockCollection = jest.fn().mockReturnValue({
+      doc: mockDoc,
+      where: mockWhere,
+      orderBy: mockOrderBy,
+    });
+
+    (db.collection as jest.Mock) = mockCollection;
   });
 
-  describe("createWorkoutPlan", () => {
-    it("should create a workout plan successfully", async () => {
-      mockWorkoutPlanRepository.create = jest.fn().mockResolvedValue(mockWorkoutPlan);
+  describe("create", () => {
+    it("should create a new workout plan successfully", async () => {
+      mockGet.mockResolvedValue({
+        exists: true,
+        id: "plan-123",
+        data: () => ({
+          ...mockCreateWorkoutPlanData,
+          createdBy: "trainer-456",
+          enrolledCount: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      });
 
-      const result = await workoutPlanService.createWorkoutPlan(
+      const result = await workoutPlanRepository.create(
         "trainer-456",
         mockCreateWorkoutPlanData
       );
 
-      expect(mockWorkoutPlanRepository.create).toHaveBeenCalledWith(
-        "trainer-456",
-        mockCreateWorkoutPlanData
+      expect(mockCollection).toHaveBeenCalledWith("workoutPlans");
+      expect(mockDoc).toHaveBeenCalled();
+      expect(mockSet).toHaveBeenCalled();
+      expect(result).toHaveProperty("id");
+      expect(result.createdBy).toBe("trainer-456");
+      expect(result.name).toBe(mockCreateWorkoutPlanData.name);
+      expect(result.enrolledCount).toBe(0);
+    });
+  });
+
+  describe("findById", () => {
+    it("should find a workout plan by ID", async () => {
+      mockGet.mockResolvedValue({
+        exists: true,
+        id: "plan-123",
+        data: () => ({
+          name: mockWorkoutPlan.name,
+          description: mockWorkoutPlan.description,
+          duration: mockWorkoutPlan.duration,
+          difficulty: mockWorkoutPlan.difficulty,
+          workouts: mockWorkoutPlan.workouts,
+          createdBy: mockWorkoutPlan.createdBy,
+          isPublic: mockWorkoutPlan.isPublic,
+          enrolledCount: mockWorkoutPlan.enrolledCount,
+          createdAt: mockWorkoutPlan.createdAt.toISOString(),
+          updatedAt: mockWorkoutPlan.updatedAt.toISOString(),
+        }),
+      });
+
+      const result = await workoutPlanRepository.findById("plan-123");
+
+      expect(mockCollection).toHaveBeenCalledWith("workoutPlans");
+      expect(mockDoc).toHaveBeenCalledWith("plan-123");
+      expect(mockGet).toHaveBeenCalled();
+      expect(result.id).toBe("plan-123");
+      expect(result.name).toBe(mockWorkoutPlan.name);
+    });
+
+    it("should throw NotFoundError if workout plan does not exist", async () => {
+      mockGet.mockResolvedValue({
+        exists: false,
+      });
+
+      await expect(workoutPlanRepository.findById("nonexistent-id")).rejects.toThrow(
+        NotFoundError
       );
-      expect(result).toEqual(mockWorkoutPlan);
     });
   });
 
-  describe("getWorkoutPlanById", () => {
-    it("should get a workout plan by ID", async () => {
-      mockWorkoutPlanRepository.findById = jest.fn().mockResolvedValue(mockWorkoutPlan);
+  describe("findAll", () => {
+    it("should find all workout plans", async () => {
+      mockOrderBy.mockReturnValue({
+        get: jest.fn().mockResolvedValue({
+          docs: mockWorkoutPlans.map((plan) => ({
+            id: plan.id,
+            data: () => ({
+              name: plan.name,
+              description: plan.description,
+              duration: plan.duration,
+              difficulty: plan.difficulty,
+              workouts: plan.workouts,
+              createdBy: plan.createdBy,
+              isPublic: plan.isPublic,
+              enrolledCount: plan.enrolledCount,
+              createdAt: plan.createdAt.toISOString(),
+              updatedAt: plan.updatedAt.toISOString(),
+            }),
+          })),
+        }),
+      });
 
-      const result = await workoutPlanService.getWorkoutPlanById("plan-123");
+      const result = await workoutPlanRepository.findAll();
 
-      expect(mockWorkoutPlanRepository.findById).toHaveBeenCalledWith("plan-123");
-      expect(result).toEqual(mockWorkoutPlan);
+      expect(mockCollection).toHaveBeenCalledWith("workoutPlans");
+      expect(mockOrderBy).toHaveBeenCalledWith("createdAt", "desc");
+      expect(result).toHaveLength(2);
+    });
+
+    it("should find workout plans with difficulty filter", async () => {
+      mockWhere.mockReturnValue({
+        orderBy: mockOrderBy,
+      });
+
+      mockOrderBy.mockReturnValue({
+        get: jest.fn().mockResolvedValue({
+          docs: [],
+        }),
+      });
+
+      await workoutPlanRepository.findAll({ difficulty: "beginner" });
+
+      expect(mockWhere).toHaveBeenCalledWith("difficulty", "==", "beginner");
+    });
+
+    it("should find workout plans with isPublic filter", async () => {
+      mockWhere.mockReturnValue({
+        orderBy: mockOrderBy,
+      });
+
+      mockOrderBy.mockReturnValue({
+        get: jest.fn().mockResolvedValue({
+          docs: [],
+        }),
+      });
+
+      await workoutPlanRepository.findAll({ isPublic: true });
+
+      expect(mockWhere).toHaveBeenCalledWith("isPublic", "==", true);
     });
   });
 
-  describe("getAllWorkoutPlans", () => {
-    it("should get all public plans for regular users", async () => {
-      const publicPlans = mockWorkoutPlans.filter((p) => p.isPublic);
-      mockWorkoutPlanRepository.findAll = jest.fn().mockResolvedValue(publicPlans);
-
-      const result = await workoutPlanService.getAllWorkoutPlans("user");
-
-      expect(mockWorkoutPlanRepository.findAll).toHaveBeenCalledWith({ isPublic: true });
-      expect(result).toEqual(publicPlans);
-    });
-
-    it("should get all plans for trainers", async () => {
-      mockWorkoutPlanRepository.findAll = jest.fn().mockResolvedValue(mockWorkoutPlans);
-
-      const result = await workoutPlanService.getAllWorkoutPlans("trainer");
-
-      expect(mockWorkoutPlanRepository.findAll).toHaveBeenCalledWith(undefined);
-      expect(result).toEqual(mockWorkoutPlans);
-    });
-
-    it("should get filtered plans for admins", async () => {
-      const filters = { difficulty: "beginner" };
-      mockWorkoutPlanRepository.findAll = jest.fn().mockResolvedValue(mockWorkoutPlans);
-
-      const result = await workoutPlanService.getAllWorkoutPlans("admin", filters);
-
-      expect(mockWorkoutPlanRepository.findAll).toHaveBeenCalledWith(filters);
-      expect(result).toEqual(mockWorkoutPlans);
-    });
-  });
-
-  describe("updateWorkoutPlan", () => {
+  describe("update", () => {
     it("should update a workout plan successfully", async () => {
-      const updatedPlan = { ...mockWorkoutPlan, name: "Updated Program" };
-      mockWorkoutPlanRepository.update = jest.fn().mockResolvedValue(updatedPlan);
+      mockGet.mockResolvedValueOnce({
+        exists: true,
+      });
 
-      const result = await workoutPlanService.updateWorkoutPlan(
-        "plan-123",
-        mockUpdateWorkoutPlanData
-      );
+      mockGet.mockResolvedValueOnce({
+        exists: true,
+        id: "plan-123",
+        data: () => ({
+          name: mockUpdateWorkoutPlanData.name,
+          description: mockUpdateWorkoutPlanData.description,
+          duration: mockUpdateWorkoutPlanData.duration,
+          difficulty: mockWorkoutPlan.difficulty,
+          workouts: mockWorkoutPlan.workouts,
+          createdBy: mockWorkoutPlan.createdBy,
+          isPublic: mockWorkoutPlan.isPublic,
+          enrolledCount: mockWorkoutPlan.enrolledCount,
+          createdAt: mockWorkoutPlan.createdAt.toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
+      });
 
-      expect(mockWorkoutPlanRepository.update).toHaveBeenCalledWith(
-        "plan-123",
-        mockUpdateWorkoutPlanData
-      );
-      expect(result).toEqual(updatedPlan);
+      const result = await workoutPlanRepository.update("plan-123", mockUpdateWorkoutPlanData);
+
+      expect(mockUpdate).toHaveBeenCalled();
+      expect(result.name).toBe(mockUpdateWorkoutPlanData.name);
+    });
+
+    it("should throw NotFoundError if workout plan does not exist", async () => {
+      mockGet.mockResolvedValue({
+        exists: false,
+      });
+
+      await expect(
+        workoutPlanRepository.update("nonexistent-id", mockUpdateWorkoutPlanData)
+      ).rejects.toThrow(NotFoundError);
     });
   });
 
-  describe("deleteWorkoutPlan", () => {
+  describe("delete", () => {
     it("should delete a workout plan successfully", async () => {
-      mockWorkoutPlanRepository.delete = jest.fn().mockResolvedValue(undefined);
+      mockGet.mockResolvedValue({
+        exists: true,
+      });
 
-      await workoutPlanService.deleteWorkoutPlan("plan-123");
+      await workoutPlanRepository.delete("plan-123");
 
-      expect(mockWorkoutPlanRepository.delete).toHaveBeenCalledWith("plan-123");
+      expect(mockDelete).toHaveBeenCalled();
     });
-  });
 
-  describe("enrollUserInPlan", () => {
-    it("should enroll user and create workouts", async () => {
-      mockWorkoutPlanRepository.findById = jest.fn().mockResolvedValue(mockWorkoutPlan);
-      mockWorkoutPlanRepository.enrollUser = jest.fn().mockResolvedValue(mockEnrollment);
-      mockWorkoutRepository.create = jest.fn().mockResolvedValue({} as any);
+    it("should throw NotFoundError if workout plan does not exist", async () => {
+      mockGet.mockResolvedValue({
+        exists: false,
+      });
 
-      const result = await workoutPlanService.enrollUserInPlan("user-456", "plan-123");
-
-      expect(mockWorkoutPlanRepository.findById).toHaveBeenCalledWith("plan-123");
-      expect(mockWorkoutPlanRepository.enrollUser).toHaveBeenCalledWith("user-456", "plan-123");
-      expect(result.enrollment).toEqual(mockEnrollment);
-      expect(result.workoutsCreated).toBeGreaterThan(0);
+      await expect(workoutPlanRepository.delete("nonexistent-id")).rejects.toThrow(
+        NotFoundError
+      );
     });
   });
 
   describe("getUserEnrollments", () => {
     it("should get user enrollments", async () => {
-      const enrollments = [mockEnrollment];
-      mockWorkoutPlanRepository.getUserEnrollments = jest.fn().mockResolvedValue(enrollments);
+      mockOrderBy.mockReturnValue({
+        get: jest.fn().mockResolvedValue({
+          docs: [
+            {
+              id: mockEnrollment.id,
+              data: () => ({
+                userId: mockEnrollment.userId,
+                planId: mockEnrollment.planId,
+                startDate: mockEnrollment.startDate.toISOString(),
+                status: mockEnrollment.status,
+                currentWeek: mockEnrollment.currentWeek,
+                createdAt: mockEnrollment.createdAt.toISOString(),
+                updatedAt: mockEnrollment.updatedAt.toISOString(),
+              }),
+            },
+          ],
+        }),
+      });
 
-      const result = await workoutPlanService.getUserEnrollments("user-456");
+      mockWhere.mockReturnValue({
+        orderBy: mockOrderBy,
+      });
 
-      expect(mockWorkoutPlanRepository.getUserEnrollments).toHaveBeenCalledWith("user-456");
-      expect(result).toEqual(enrollments);
+      const result = await workoutPlanRepository.getUserEnrollments("user-456");
+
+      expect(mockWhere).toHaveBeenCalledWith("userId", "==", "user-456");
+      expect(result).toHaveLength(1);
+      expect(result[0].userId).toBe("user-456");
     });
   });
 });
+

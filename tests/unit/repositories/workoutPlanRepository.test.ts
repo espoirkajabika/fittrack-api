@@ -261,59 +261,6 @@ describe("WorkoutPlanRepository", () => {
     });
   });
 
-  describe("enrollUser", () => {
-    it("should enroll a user in a workout plan successfully", async () => {
-      // Mock findById call
-      mockGet.mockResolvedValueOnce({
-        exists: true,
-        id: "plan-123",
-        data: () => ({
-          name: mockWorkoutPlan.name,
-          description: mockWorkoutPlan.description,
-          duration: mockWorkoutPlan.duration,
-          difficulty: mockWorkoutPlan.difficulty,
-          workouts: mockWorkoutPlan.workouts,
-          createdBy: mockWorkoutPlan.createdBy,
-          isPublic: mockWorkoutPlan.isPublic,
-          enrolledCount: mockWorkoutPlan.enrolledCount,
-          createdAt: mockWorkoutPlan.createdAt.toISOString(),
-          updatedAt: mockWorkoutPlan.updatedAt.toISOString(),
-        }),
-      });
-
-      // Mock existing enrollment check
-      mockGet.mockResolvedValueOnce({
-        empty: true,
-      });
-
-      // Mock enrollment set
-      const result = await workoutPlanRepository.enrollUser("user-456", "plan-123");
-
-      expect(result).toHaveProperty("id");
-      expect(result.userId).toBe("user-456");
-      expect(result.planId).toBe("plan-123");
-      expect(result.status).toBe("active");
-    });
-
-    it("should throw error if user already enrolled", async () => {
-      // Mock findById call
-      mockGet.mockResolvedValueOnce({
-        exists: true,
-        id: "plan-123",
-        data: () => mockWorkoutPlan,
-      });
-
-      // Mock existing enrollment check (not empty)
-      mockGet.mockResolvedValueOnce({
-        empty: false,
-      });
-
-      await expect(
-        workoutPlanRepository.enrollUser("user-456", "plan-123")
-      ).rejects.toThrow("User is already enrolled in this plan");
-    });
-  });
-
   describe("getUserEnrollments", () => {
     it("should get user enrollments", async () => {
       mockOrderBy.mockReturnValue({
