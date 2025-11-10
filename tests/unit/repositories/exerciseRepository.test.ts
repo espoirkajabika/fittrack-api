@@ -49,9 +49,23 @@ describe("ExerciseRepository", () => {
       delete: mockDelete,
     });
 
+    // Setup orderBy to return an object with get
+    mockOrderBy.mockReturnValue({
+      get: jest.fn().mockResolvedValue({
+        docs: [],
+      }),
+    });
+
+    // Setup where to return an object with where and orderBy
+    mockWhere.mockReturnValue({
+      where: mockWhere,
+      orderBy: mockOrderBy,
+    });
+
     mockCollection = jest.fn().mockReturnValue({
       doc: mockDoc,
       where: mockWhere,
+      orderBy: mockOrderBy, // Add orderBy directly to collection
     });
 
     (db.collection as jest.Mock) = mockCollection;
@@ -148,13 +162,10 @@ describe("ExerciseRepository", () => {
         }),
       });
 
-      mockWhere.mockReturnValue({
-        orderBy: mockOrderBy,
-      });
-
       const result = await exerciseRepository.findAll();
 
       expect(mockCollection).toHaveBeenCalledWith("exercises");
+      expect(mockOrderBy).toHaveBeenCalledWith("name", "asc");
       expect(result).toHaveLength(3);
     });
 
@@ -256,10 +267,6 @@ describe("ExerciseRepository", () => {
             }),
           })),
         }),
-      });
-
-      mockWhere.mockReturnValue({
-        orderBy: mockOrderBy,
       });
 
       const result = await exerciseRepository.findAll({ search: "bench" });
