@@ -10,7 +10,8 @@ import { getCorsOptions } from "./config/corsConfig";
 import setupSwagger from "./config/swagger";
 import errorHandler from "./api/v1/middleware/errorHandler";
 import workoutRoutes from "./api/v1/routes/workoutRoutes";
-import exerciseRoutes from "./api/v1/routes/exerciseRoutes";  // ADD THIS
+import exerciseRoutes from "./api/v1/routes/exerciseRoutes";
+import workoutPlanRoutes from "./api/v1/routes/workoutPlanRoutes";  // ADD THIS
 
 const app: Express = express();
 
@@ -36,7 +37,8 @@ app.get("/health", (_req, res) => {
 
 // API Routes
 app.use("/api/v1/workouts", workoutRoutes);
-app.use("/api/v1/exercises", exerciseRoutes);  // ADD THIS
+app.use("/api/v1/exercises", exerciseRoutes);
+app.use("/api/v1/workout-plans", workoutPlanRoutes);  // ADD THIS
 
 // 404 handler
 app.use((_req, res) => {
