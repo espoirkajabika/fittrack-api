@@ -9,62 +9,36 @@ import {
   cert,
   getApps,
   App,
+  AppOptions,
 } from "firebase-admin/app";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
 import { getAuth, Auth } from "firebase-admin/auth";
 import * as path from "path";
-import * as fs from "fs";
 
 /**
- * Loads and validates Firebase service account credentials
+ * Retrieves Firebase configuration from service account file
  *
- * @returns {object} Service account credentials object
- * @throws {Error} If service account file is missing or invalid
+ * @returns {AppOptions} Firebase application configuration object
+ * @throws {Error} If service account file is missing
  */
-const getServiceAccount = (): object => {
-  const serviceAccountPath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH;
-
-  if (!serviceAccountPath) {
-    throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT_PATH is not defined in environment variables"
-    );
-  }
-
-  // Resolve the path relative to the project root
-  const absolutePath = path.resolve(process.cwd(), serviceAccountPath);
-
-  // Check if file exists
-  if (!fs.existsSync(absolutePath)) {
-    throw new Error(
-      `Firebase service account file not found at: ${absolutePath}\n` +
-      "Please ensure the file exists and the path in .env is correct."
-    );
-  }
+const getFirebaseConfig = (): AppOptions => {
+  // Path to service account JSON file
+  const serviceAccountPath = path.join(
+    __dirname,
+    "../../config/serviceAccount.json"
+  );
 
   try {
-    // Read and parse the service account JSON file
-    const serviceAccountFile = fs.readFileSync(absolutePath, "utf8");
-    const serviceAccount = JSON.parse(serviceAccountFile);
-
-    // Validate required fields
-    const requiredFields = ["project_id", "private_key", "client_email"];
-    const missingFields = requiredFields.filter(field => !serviceAccount[field]);
-
-    if (missingFields.length > 0) {
-      throw new Error(
-        `Service account JSON is missing required fields: ${missingFields.join(", ")}`
-      );
-    }
-
-    return serviceAccount;
+    // Use cert with the path to service account file
+    return {
+      credential: cert(serviceAccountPath),
+    };
   } catch (error) {
-    if (error instanceof SyntaxError) {
-      throw new Error(
-        `Invalid JSON in service account file: ${absolutePath}\n` +
-        "Please ensure the file contains valid JSON."
-      );
-    }
-    throw error;
+    throw new Error(
+      `Failed to load Firebase service account from ${serviceAccountPath}. ` +
+      `Please ensure config/serviceAccount.json exists. ` +
+      `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+    );
   }
 };
 
@@ -80,19 +54,13 @@ const initializeFirebaseAdmin = (): App => {
   // Check if an app is already initialized
   const existingApp: App = getApps()[0];
   if (existingApp) {
-    console.log("Using existing Firebase Admin app");
+    console.log("✅ Firebase Admin SDK already initialized");
     return existingApp;
   }
 
-  // Load service account and initialize new app
-  const serviceAccount = getServiceAccount();
-  
-  console.log(" Initializing Firebase Admin SDK...");
-  const app = initializeApp({
-    credential: cert(serviceAccount as any),
-  });
-  
-  console.log(" Firebase Admin SDK initialized successfully");
+  console.log("🔥 Initializing Firebase Admin SDK...");
+  const app = initializeApp(getFirebaseConfig());
+  console.log("✅ Firebase Admin SDK initialized successfully");
   return app;
 };
 
@@ -101,4 +69,4 @@ const app: App = initializeFirebaseAdmin();
 const db: Firestore = getFirestore(app);
 const auth: Auth = getAuth(app);
 
-export { db, auth };
+export { db, auth, initializeFirebaseAdmin };
