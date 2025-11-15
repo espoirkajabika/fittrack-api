@@ -12,7 +12,8 @@ import errorHandler from "./api/v1/middleware/errorHandler";
 import workoutRoutes from "./api/v1/routes/workoutRoutes";
 import exerciseRoutes from "./api/v1/routes/exerciseRoutes";
 import workoutPlanRoutes from "./api/v1/routes/workoutPlanRoutes";
-import progressRoutes from "./api/v1/routes/progressRoutes";  // ADD THIS
+import progressRoutes from "./api/v1/routes/progressRoutes";
+import goalRoutes from "./api/v1/routes/goalRoutes";  // ADD THIS
 
 const app: Express = express();
 
@@ -40,7 +41,8 @@ app.get("/health", (_req, res) => {
 app.use("/api/v1/workouts", workoutRoutes);
 app.use("/api/v1/exercises", exerciseRoutes);
 app.use("/api/v1/workout-plans", workoutPlanRoutes);
-app.use("/api/v1/progress", progressRoutes);  // ADD THIS
+app.use("/api/v1/progress", progressRoutes);
+app.use("/api/v1/goals", goalRoutes);  // ADD THIS
 
 // 404 handler
 app.use((_req, res) => {
