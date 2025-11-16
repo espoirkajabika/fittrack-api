@@ -3,6 +3,15 @@ import { Workout, CreateWorkoutDto, UpdateWorkoutDto } from "../models/workout";
 import { AuthorizationError } from "../models/errors";
 
 /**
+ * Filter options for workouts
+ */
+interface WorkoutFilters {
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+}
+
+/**
  * Workout Service
  * Contains business logic for workout operations
  */
@@ -38,14 +47,7 @@ export class WorkoutService {
   /**
    * Get all workouts for a user with optional filters
    */
-  async getUserWorkouts(
-    userId: string,
-    filters?: {
-      status?: string;
-      startDate?: Date;
-      endDate?: Date;
-    }
-  ): Promise<Workout[]> {
+  async getUserWorkouts(userId: string, filters?: WorkoutFilters): Promise<Workout[]> {
     return await this.workoutRepository.findByUserId(userId, filters);
   }
 
