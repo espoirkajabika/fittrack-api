@@ -251,4 +251,39 @@ export class GoalRepository {
       goalsByType,
     };
   }
+
+  /**
+   * Get all active goals (for scheduled jobs)
+   */
+  async findAllActiveGoals(): Promise<Goal[]> {
+    const snapshot = await db
+      .collection(GOALS_COLLECTION)
+      .where("status", "==", "active")
+      .get();
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        userId: data.userId,
+        type: data.type,
+        title: data.title,
+        description: data.description,
+        targetWeight: data.targetWeight,
+        targetBodyFat: data.targetBodyFat,
+        strengthTarget: data.strengthTarget,
+        frequencyTarget: data.frequencyTarget,
+        customTarget: data.customTarget,
+        startValue: data.startValue,
+        currentValue: data.currentValue,
+        currentProgress: data.currentProgress,
+        startDate: new Date(data.startDate),
+        deadline: new Date(data.deadline),
+        completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
+        status: data.status,
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      };
+    });
+  }
 }

@@ -13,7 +13,8 @@ import workoutRoutes from "./api/v1/routes/workoutRoutes";
 import exerciseRoutes from "./api/v1/routes/exerciseRoutes";
 import workoutPlanRoutes from "./api/v1/routes/workoutPlanRoutes";
 import progressRoutes from "./api/v1/routes/progressRoutes";
-import goalRoutes from "./api/v1/routes/goalRoutes";  // ADD THIS
+import goalRoutes from "./api/v1/routes/goalRoutes";
+import jobRoutes from "./api/v1/routes/jobRoutes";  // ADD THIS
 
 const app: Express = express();
 
@@ -42,7 +43,8 @@ app.use("/api/v1/workouts", workoutRoutes);
 app.use("/api/v1/exercises", exerciseRoutes);
 app.use("/api/v1/workout-plans", workoutPlanRoutes);
 app.use("/api/v1/progress", progressRoutes);
-app.use("/api/v1/goals", goalRoutes);  // ADD THIS
+app.use("/api/v1/goals", goalRoutes);
+app.use("/api/v1/jobs", jobRoutes);  // ADD THIS
 
 // 404 handler
 app.use((_req, res) => {
