@@ -13,7 +13,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "generate-docs": "ts-node scripts/generate-openapi.ts && npx @redocly/cli build-docs openapi.json --output docs/index.html"
-},
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/espoirkajabika/fittrack-api.git"
