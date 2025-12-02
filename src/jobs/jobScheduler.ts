@@ -52,7 +52,7 @@ export class JobScheduler {
     });
 
     console.log(
-      `✅ Job scheduler started with ${this.scheduledJobs.size} active jobs`
+      `Job scheduler started with ${this.scheduledJobs.size} active jobs`
     );
     this.listScheduledJobs();
   }
@@ -72,14 +72,14 @@ export class JobScheduler {
     );
 
     this.scheduledJobs.set(config.name, task);
-    console.log(`📅 Scheduled job: ${config.name} (${config.schedule})`);
+    console.log(`Scheduled job: ${config.name} (${config.schedule})`);
   }
 
   /**
    * Execute a job by name (can be called manually or by scheduler)
    */
   async executeJob(jobName: string): Promise<JobResult> {
-    console.log(`▶️  Executing job: ${jobName}`);
+    console.log(`Executing job: ${jobName}`);
 
     let result: JobResult;
 
@@ -121,15 +121,15 @@ export class JobScheduler {
    * Stop all scheduled jobs
    */
   stopAll(): void {
-    console.log("🛑 Stopping all scheduled jobs...");
+    console.log("Stopping all scheduled jobs...");
 
     this.scheduledJobs.forEach((task, name) => {
       task.stop();
-      console.log(`⏹️  Stopped job: ${name}`);
+      console.log(`Stopped job: ${name}`);
     });
 
     this.scheduledJobs.clear();
-    console.log("✅ All jobs stopped");
+    console.log("All jobs stopped");
   }
 
   /**
@@ -141,7 +141,7 @@ export class JobScheduler {
     if (task) {
       task.stop();
       this.scheduledJobs.delete(jobName);
-      console.log(`⏹️  Stopped job: ${jobName}`);
+      console.log(`Stopped job: ${jobName}`);
       return true;
     }
 
@@ -188,9 +188,9 @@ export class JobScheduler {
    * List all scheduled jobs
    */
   private listScheduledJobs(): void {
-    console.log("\n📋 Scheduled Jobs:");
+    console.log("\nScheduled Jobs:");
     this.jobConfigs.forEach((config) => {
-      const status = this.scheduledJobs.has(config.name) ? "✅ Active" : "❌ Inactive";
+      const status = this.scheduledJobs.has(config.name) ? "Active" : "Inactive";
       console.log(`   ${status} - ${config.name}: ${config.description}`);
       console.log(`      Schedule: ${config.schedule}`);
     });

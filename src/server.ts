@@ -9,9 +9,9 @@ initializeFirebaseAdmin();
 
 // Start the server
 const server = app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📚 API Documentation: http://localhost:${PORT}/api-docs`);
-  console.log(`💚 Health check: http://localhost:${PORT}/health`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`API Documentation: http://localhost:${PORT}/api-docs`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
   
   // Initialize and start job scheduler
   const scheduler = getScheduler();
